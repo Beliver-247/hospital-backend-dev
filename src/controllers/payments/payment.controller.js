@@ -108,8 +108,8 @@ export const downloadReceipt = [
     if (!payment || String(payment.customer.userId) !== String(req.user.id))
       return res.status(404).json({ message: 'Payment not found' });
 
-    // Convert to plain object for safe access
-    const p = payment.toObject ? payment.toObject() : payment;
+    // Convert to plain object with nested subdocuments
+    const p = JSON.parse(JSON.stringify(payment.toObject ? payment.toObject() : payment));
 
     // Fetch names
     let patientName = '-';
@@ -154,12 +154,28 @@ export const downloadReceipt = [
     doc.fontSize(12).text('Breakdown:');
     doc.moveDown(0.25);
     doc.fontSize(11);
+    // Ensure breakdown is a clean plain object with only the actual fields
     const breakdown = p.breakdown || {};
-    Object.entries(breakdown).forEach(([k, v]) => {
-      doc.text(`${k}: ${fmt(v)}`);
+    const validFields = ['consultationFee', 'labTests', 'prescription', 'processingFee', 'other'];
+    const cleanBreakdown = {};
+    validFields.forEach(field => {
+      if (breakdown[field] !== undefined) {
+        cleanBreakdown[field] = breakdown[field];
+      }
+    });
+    
+    // Debug log
+    console.log('PDF Breakdown:', JSON.stringify(cleanBreakdown));
+    console.log('PDF Total Amount:', p.totalAmount);
+    
+    Object.entries(cleanBreakdown).forEach(([k, v]) => {
+      const formattedValue = fmt(v);
+      console.log(`PDF Line: ${k}: ${formattedValue}`);
+      doc.text(`${k}: ${formattedValue}`);
     });
     doc.moveDown(0.5);
-    const totalAmount = typeof p.totalAmount === 'number' ? p.totalAmount : Object.values(breakdown).reduce((a, b) => a + Number(b || 0), 0);
+    const totalAmount = typeof p.totalAmount === 'number' ? p.totalAmount : Object.values(cleanBreakdown).reduce((a, b) => a + Number(b || 0), 0);
+    console.log('PDF Calculated Total:', totalAmount);
     doc.fontSize(12).text(`Total: ${fmt(totalAmount)}`, { align: 'right' });
 
     doc.end();

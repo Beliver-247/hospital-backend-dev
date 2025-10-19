@@ -192,7 +192,9 @@ export class CardPaymentService extends PaymentService {
           // Format amount as in PDF
           const currency = payment.currency || 'LKR';
           const fmt = (n) => `${currency} ${Number(n ?? 0).toFixed(2)}`;
-          const totalAmount = typeof payment.totalAmount === 'number' ? payment.totalAmount : Object.values(payment.breakdown || {}).reduce((a, b) => a + Number(b || 0), 0);
+          // Convert Mongoose subdocument to plain object for calculation
+          const breakdownObj = payment.breakdown?.toObject ? payment.breakdown.toObject() : (payment.breakdown || {});
+          const totalAmount = typeof payment.totalAmount === 'number' ? payment.totalAmount : Object.values(breakdownObj).reduce((a, b) => a + Number(b || 0), 0);
           // Compose payment details
           const html = `<h2>Payment Success</h2>
             <p>Your payment was successful and your appointment is confirmed.</p>
@@ -230,7 +232,8 @@ export class CardPaymentService extends PaymentService {
         doc.fontSize(12).text('Breakdown:');
         doc.moveDown(0.25);
         doc.fontSize(11);
-        const breakdown = payment.breakdown || {};
+        // Convert Mongoose subdocument to plain object
+        const breakdown = payment.breakdown?.toObject ? payment.breakdown.toObject() : (payment.breakdown || {});
         const currency = payment.currency || 'LKR';
         const fmt = (n) => `${currency} ${Number(n ?? 0).toFixed(2)}`;
         Object.entries(breakdown).forEach(([k, v]) => {
