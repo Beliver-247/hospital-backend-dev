@@ -1,0 +1,153 @@
+{
+  "info": {
+    "_postman_id": "d3a6d2a0-6b35-4f7a-a9a8-4c5c9e7c7b88",
+    "name": "Hospital Payments API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection for OTP-backed card payments"
+  },
+  "item": [
+    {
+      "name": "Auth - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "{{baseUrl}}/auth/login", "host": ["{{baseUrl}}"], "path": ["auth","login"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"patient@example.com\",\n  \"password\": \"secret\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - Initiate Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key":"Authorization","value":"Bearer {{token}}"},
+          {"key":"Content-Type","value":"application/json"}
+        ],
+        "url": { "raw": "{{baseUrl}}/payments/card/initiate", "host": ["{{baseUrl}}"], "path": ["payments","card","initiate"] },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"breakdown\": {\n    \"consultationFee\": 1000,\n    \"labTests\": 500,\n    \"prescription\": 250,\n    \"processingFee\": 50,\n    \"other\": 0\n  },\n  \"currency\": \"LKR\",\n  \"card\": {\n    \"number\": \"4242424242424242\",\n    \"expMonth\": 12,\n    \"expYear\": 2027,\n    \"cvc\": \"123\",\n    \"name\": \"Test Card\",\n    \"brand\": \"VISA\"\n  },\n  \"patientId\": \"68f34abc1234567890fedcba\",\n  \"notes\": \"OPD visit\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - Confirm Card",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key":"Authorization","value":"Bearer {{token}}"},
+          {"key":"Content-Type","value":"application/json"}
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/payments/card/{{paymentId}}/confirm",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments","card","{{paymentId}}","confirm"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"otpRefId\": \"{{otpRefId}}\",\n  \"otpCode\": \"{{otpCode}}\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - List My Payments",
+      "request": {
+        "method": "GET",
+        "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ],
+        "url": {
+          "raw": "{{baseUrl}}/payments/me?method=CARD&status=CAPTURED&page=1&limit=20",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments","me"],
+          "query": [
+            {"key":"method","value":"CARD"},
+            {"key":"status","value":"CAPTURED"},
+            {"key":"page","value":"1"},
+            {"key":"limit","value":"20"}
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - Get By Id",
+      "request": {
+        "method": "GET",
+        "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ],
+        "url": {
+          "raw": "{{baseUrl}}/payments/{{paymentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments","{{paymentId}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - Update (Notes)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {"key":"Authorization","value":"Bearer {{token}}"},
+          {"key":"Content-Type","value":"application/json"}
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/payments/{{paymentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments","{{paymentId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"notes\": \"Updated note\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - Update (Cancel)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {"key":"Authorization","value":"Bearer {{token}}"},
+          {"key":"Content-Type","value":"application/json"}
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/payments/{{paymentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments","{{paymentId}}"]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"status\": \"CANCELLED\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Payments - Delete",
+      "request": {
+        "method": "DELETE",
+        "header": [ {"key":"Authorization","value":"Bearer {{token}}"} ],
+        "url": {
+          "raw": "{{baseUrl}}/payments/{{paymentId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["payments","{{paymentId}}"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {"key":"baseUrl","value":"http://localhost:4000/api"},
+    {"key":"token","value":""},
+    {"key":"paymentId","value":""},
+    {"key":"otpRefId","value":""},
+    {"key":"otpCode","value":""}
+  ]
+}

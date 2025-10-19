@@ -36,7 +36,7 @@ describe('GET /api/appointments/slots', () => {
     });
 
     patient = await User.create({
-      email: 'patient@example.com',
+      email: 'thassaramadusha@gmail.com',
       passwordHash: 'x',
       role: 'PATIENT',
       name: 'Pat Ient',

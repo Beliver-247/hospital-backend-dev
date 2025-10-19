@@ -5,7 +5,7 @@ import User from '../models/User.js';
 import { nextAppointmentId } from './id.service.js';
 import { normalizeSlotRange } from './slot.service.js';
 import env from '../config/env.js'
-import { notifyAppointment } from './notify.service.js';
+import { notifyAppointment } from './email/notify.service.js';
 
 /* -------------------------- helpers / utilities -------------------------- */
 

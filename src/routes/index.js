@@ -7,6 +7,7 @@ import reportRoutes from './report.routes.js';
 import appointmentRoutes from './appointment.routes.js';
 import doctorRoutes from './doctor.routes.js'; 
 import usersRoutes from './users.routes.js';
+import paymentRoutes from './payments/payment.routes.js';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/reports', reportRoutes);
 router.use('/appointments', appointmentRoutes);
 router.use('/doctors', doctorRoutes);  
 router.use('/users', usersRoutes); // <— add this
+router.use('/payments', paymentRoutes);
 
 export default router;

@@ -35,7 +35,8 @@ const PatientSchema = new mongoose.Schema(
     createdBy: { userId: String, role: String },
     meta: {
       submissionId: { type: String, default: null } // for idempotency
-    }
+    },
+    payments: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Payment' }]
   },
   { timestamps: true }
 );

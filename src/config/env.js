@@ -18,6 +18,13 @@ const env = {
   String(process.env.APPT_BLOCK_PATIENT_OVERLAP || "true") === "true",
   notifyEnabled: String(process.env.NOTIFY_ENABLED || "false") === "true",
   notifyDriver: process.env.NOTIFY_DRIVER || "console", // future: 'smtp', 'twilio', etc.
+  smtp: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT || 587),
+    user: process.env.SMTP_USER,
+    pass: process.env.SMTP_PASS,
+    from: process.env.EMAIL_FROM || process.env.SMTP_USER
+  }
 };
 
 export default env;
