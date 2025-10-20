@@ -1,5 +1,5 @@
-// src/controllers/report.controller.js
-import reportService from '../services/report.service.js';
+// src/controllers/reports/report.controller.js
+import reportService from '../../services/reports/report.service.js';
 
 // In the generateReport controller - ENHANCED VERSION
 export const generateReport = async (req, res, next) => {
