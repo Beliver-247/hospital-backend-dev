@@ -1,5 +1,6 @@
 // src/controllers/reports/report.controller.js
 import reportService from '../../services/reports/report.service.js';
+import PDFDocument from 'pdfkit';
 
 // In the generateReport controller - ENHANCED VERSION
 export const generateReport = async (req, res, next) => {
@@ -190,21 +191,202 @@ export const deleteReport = async (req, res, next) => {
   }
 };
 
-// Download report
 export const downloadReport = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { format = 'json' } = req.query;
+    const { format = 'pdf' } = req.query;
 
-    const { content, filename, contentType } = await reportService.downloadReport(id, format);
+    if (format.toLowerCase() === 'pdf') {
+      const report = await reportService.getReportById(id);
+      if (!report) {
+        return res.status(404).json({ success: false, message: 'Report not found' });
+      }
 
-    res.setHeader('Content-Type', contentType);
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(content);
+      const reportData = report.data || {};
+      const filename = `${reportData.reportType || 'report'}_${id}.pdf`;
+
+      const doc = new PDFDocument({ margin: 40, size: 'A4' });
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      doc.pipe(res);
+
+
+
+      doc
+        .fontSize(22)
+        .fillColor('#003366')
+        .text('Hospital Management System', 120, 40, { align: 'left' })
+        .moveDown(2);
+
+      // === REPORT TITLE ===
+      doc
+        .fontSize(18)
+        .fillColor('black')
+        .text('Detailed Report', { align: 'center', underline: true })
+        .moveDown(1.5);
+
+      // === REPORT SUMMARY TABLE ===
+      const summaryData = [
+        ['Report Type', reportData.reportType || '-'],
+        ['Generated At', new Date(reportData.generatedAt).toLocaleString() || '-'],
+        ['Total Patients', reportData.totalPatients || '-'],
+        ['Total Appointments', reportData.totalAppointments || '-'],
+        ['Date Range', reportData.dateRange ? `${reportData.dateRange.start} - ${reportData.dateRange.end}` : '-']
+      ];
+
+      doc.fontSize(12);
+      let y = doc.y;
+      summaryData.forEach(([label, value]) => {
+        doc.font('Helvetica-Bold').text(`${label}: `, 50, y, { continued: true });
+        doc.font('Helvetica').text(value);
+        y = doc.y + 5;
+      });
+
+      doc.moveDown(1.5);
+
+      // === PATIENTS LIST SECTION ===
+      if (Array.isArray(reportData.data) && reportData.data.length > 0) {
+        doc.fontSize(16).text('Patients List', { underline: true }).moveDown(0.5);
+
+        // Table headers
+        const headers = ['Patient ID', 'Name', 'Contact', 'Medical Info', 'Created', 'Updated'];
+        const colWidths = [80, 100, 100, 100, 80, 80];
+        let startY = doc.y + 5;
+
+        const drawTableRow = (values, y, isHeader = false) => {
+          let x = 50;
+          values.forEach((val, i) => {
+            doc
+              .font(isHeader ? 'Helvetica-Bold' : 'Helvetica')
+              .fontSize(10)
+              .text(val || '-', x + 2, y + 5, { width: colWidths[i] - 4 });
+            x += colWidths[i];
+          });
+        };
+
+        drawTableRow(headers, startY, true);
+        let rowY = startY + 20;
+
+        reportData.data.forEach((patient) => {
+          const name = patient.personal
+            ? `${patient.personal.firstName || ''} ${patient.personal.lastName || ''}`.trim()
+            : '-';
+          const contact = patient.contact
+            ? `${patient.contact.phone || ''}, ${patient.contact.email || ''}`
+            : '-';
+          const medical = patient.medical
+            ? `${patient.medical.diagnosis || ''}`
+            : '-';
+
+          const values = [
+            patient.patientId,
+            name,
+            contact,
+            medical,
+            new Date(patient.createdAt).toLocaleDateString(),
+            new Date(patient.updatedAt).toLocaleDateString()
+          ];
+
+          drawTableRow(values, rowY);
+          rowY += 20;
+
+          // Handle page overflow
+          if (rowY > doc.page.height - 100) {
+            doc.addPage();
+            rowY = 50;
+            drawTableRow(headers, rowY, true);
+            rowY += 20;
+          }
+        });
+
+        doc.moveDown(2);
+      }
+
+      // === APPOINTMENT STATISTICS SECTION ===
+      if (reportData.statusStats || reportData.specializationStats) {
+        doc.fontSize(16).text('Appointments Statistics', { underline: true }).moveDown(0.5);
+
+        // Status Stats Table
+        if (reportData.statusStats && reportData.statusStats.length > 0) {
+          doc.fontSize(13).font('Helvetica-Bold').text('Status Breakdown:').moveDown(0.3);
+          const headers = ['Status', 'Count'];
+          let y = doc.y + 5;
+          const colWidths = [150, 100];
+          const drawRow = (vals, y, isHeader = false) => {
+            let x = 50;
+            vals.forEach((val, i) => {
+              doc
+                .font(isHeader ? 'Helvetica-Bold' : 'Helvetica')
+                .fontSize(10)
+                .text(val, x + 2, y + 5, { width: colWidths[i] - 4 });
+              x += colWidths[i];
+            });
+          };
+
+          drawRow(headers, y, true);
+          y += 20;
+
+          reportData.statusStats.forEach((stat) => {
+            drawRow([stat._id || '-', stat.count || 0], y);
+            y += 20;
+          });
+
+          doc.moveDown(1);
+        }
+
+        // Specialization Stats Table
+        if (reportData.specializationStats && reportData.specializationStats.length > 0) {
+          doc.fontSize(13).font('Helvetica-Bold').text('Specialization Breakdown:').moveDown(0.3);
+          const headers = ['Specialization', 'Count'];
+          let y = doc.y + 5;
+          const colWidths = [150, 100];
+
+          const drawRow = (vals, y, isHeader = false) => {
+            let x = 50;
+            vals.forEach((val, i) => {
+              doc
+                .font(isHeader ? 'Helvetica-Bold' : 'Helvetica')
+                .fontSize(10)
+                .text(val, x + 2, y + 5, { width: colWidths[i] - 4 });
+              x += colWidths[i];
+            });
+          };
+
+          drawRow(headers, y, true);
+          y += 20;
+
+          reportData.specializationStats.forEach((spec) => {
+            drawRow([spec._id || '-', spec.count || 0], y);
+            y += 20;
+          });
+
+          doc.moveDown(1);
+        }
+      }
+
+      // === FOOTER ===
+      doc
+        .moveDown(3)
+        .fontSize(10)
+        .fillColor('gray')
+        .text('Generated by Hospital Management System © 2025', {
+          align: 'center'
+        });
+
+      doc.end();
+    } else {
+      // Non-PDF formats
+      const { content, filename, contentType } = await reportService.downloadReport(id, format);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(content);
+    }
   } catch (error) {
     next(error);
   }
 };
+
+
 
 // Get report types for filter (optional)
 export const getReportFilterTypes = async (req, res, next) => {
