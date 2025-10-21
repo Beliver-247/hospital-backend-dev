@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "seed:user": "node scripts/seedUser.js",
     "seed:users": "node scripts/seedUsers.js",
-    "seed:appts": "node scripts/seedAppointments.js"
+    "seed:appts": "node scripts/seedAppointments.js",
+    "seed:patients": "node scripts/seedPatients.js" 
   },
   "keywords": [],
   "author": "",
