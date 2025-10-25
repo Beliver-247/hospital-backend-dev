@@ -19,12 +19,13 @@ export const initiateCard = [
   auth,
   validate(initiateCardPaymentSchema),
   asyncHandler(async (req, res) => {
-    const { breakdown, currency, card, notes } = req.body;
+    const { breakdown, currency, card, notes, appointmentId } = req.body;
     const out = await cardPaymentService.initiate({
       user: req.user,
       breakdown,
       currency,
       card,
+      appointmentId, // Pass appointmentId to link payment with appointment
       // patient/doctor are derived in service
       notes
     });

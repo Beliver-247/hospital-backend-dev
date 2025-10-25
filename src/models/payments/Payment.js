@@ -31,6 +31,7 @@ const PaymentBaseSchema = new mongoose.Schema(
     },
     doctorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: false },
     notes: { type: String, default: '' },
+    metadata: { type: mongoose.Schema.Types.Mixed, default: {} }, // Store appointmentId and other data
     createdBy: { id: String, role: String, email: String }
   },
   { timestamps: true, discriminatorKey: 'method' }

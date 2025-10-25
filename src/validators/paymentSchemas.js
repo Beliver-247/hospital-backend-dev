@@ -30,6 +30,7 @@ export const initiateCardPaymentSchema = Joi.object({
   // patientId and doctorId are derived server-side
   patientId: objectId().optional(),
   doctorId: objectId().optional(),
+  appointmentId: objectId().optional(), // Link to existing appointment
   notes: Joi.string().allow('').max(500).optional()
 });
 

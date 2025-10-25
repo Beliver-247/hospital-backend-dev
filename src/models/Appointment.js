@@ -16,6 +16,8 @@ const AppointmentSchema = new Schema({
             enum: ['PENDING','CONFIRMED','CANCELLED','COMPLETED','NO_SHOW'],
             default: 'PENDING',
             index: true },
+  paymentId: { type: Schema.Types.ObjectId, ref: 'Payment', index: true }, // Link to payment
+  paymentStatus: { type: String, enum: ['UNPAID', 'PAID', 'REFUNDED'], default: 'UNPAID' }, // Payment status
   createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
   updatedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   submissionId: { type: String, index: true },

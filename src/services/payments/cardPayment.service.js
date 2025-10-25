@@ -13,7 +13,7 @@ export class CardPaymentService extends PaymentService {
     super(repo);
   }
 
-  async initiate({ user, breakdown, currency, card, patientId, notes, doctorId }) {
+  async initiate({ user, breakdown, currency, card, patientId, notes, doctorId, appointmentId }) {
     const totalAmount = Object.values(breakdown).reduce((a, b) => a + Number(b || 0), 0);
     const last4 = card.number.slice(-4);
     const token = `tok_${last4}_${Date.now()}`; // placeholder tokenization
@@ -77,6 +77,7 @@ export class CardPaymentService extends PaymentService {
       customer: { userId: user.id, patientId: derivedPatientId },
       doctorId: effectiveDoctorId,
       notes: notes || '',
+      metadata: { appointmentId: appointmentId || null }, // Store appointmentId for later linking
       card: { last4, brand: card.brand, token },
       otpRefId
     });
@@ -123,27 +124,45 @@ export class CardPaymentService extends PaymentService {
     }
 
     await notifyPayment({ type: 'CAPTURED', payment: payment.toObject(), actor: user });
-      // Create appointment after payment success
+      // Create appointment after payment success (if not linked to existing appointment)
       let appointment = null;
       try {
         const Appointment = (await import('../../models/Appointment.js')).default;
-        // Generate unique appointmentId (timestamp + random)
-        const uniqueId = `APT${Date.now()}${Math.floor(Math.random()*10000)}`;
-        const start = new Date();
-        const end = new Date(start.getTime() + 30 * 60000); // 30 min slot
-        appointment = await Appointment.create({
-          appointmentId: uniqueId,
-          patient: payment.customer?.userId,
-          doctor: payment.doctorId,
-          start,
-          end,
-          status: 'CONFIRMED',
-          reason: 'Paid appointment',
-          createdBy: payment.customer?.userId
-        });
+        // Check if payment has appointmentId in metadata/notes
+        const appointmentIdFromPayment = payment.metadata?.appointmentId || null;
+        
+        if (appointmentIdFromPayment) {
+          // Update existing appointment with payment info
+          appointment = await Appointment.findByIdAndUpdate(
+            appointmentIdFromPayment,
+            {
+              paymentId: payment._id,
+              paymentStatus: 'PAID',
+              status: 'CONFIRMED'
+            },
+            { new: true }
+          );
+        } else {
+          // Generate unique appointmentId (timestamp + random)
+          const uniqueId = `APT${Date.now()}${Math.floor(Math.random()*10000)}`;
+          const start = new Date();
+          const end = new Date(start.getTime() + 30 * 60000); // 30 min slot
+          appointment = await Appointment.create({
+            appointmentId: uniqueId,
+            patient: payment.customer?.userId,
+            doctor: payment.doctorId,
+            start,
+            end,
+            status: 'CONFIRMED',
+            paymentId: payment._id,
+            paymentStatus: 'PAID',
+            reason: 'Paid appointment',
+            createdBy: payment.customer?.userId
+          });
+        }
       } catch (err) {
         // eslint-disable-next-line no-console
-        console.error('Failed to create appointment:', err);
+        console.error('Failed to create/update appointment:', err);
       }
 
       // Send payment success email with appointment and PDF receipt
