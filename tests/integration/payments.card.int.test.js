@@ -5,10 +5,16 @@ import mongoose from 'mongoose';
 import { createUser, issueToken } from '../helpers/auth.js';
 
 describe('Card Payments (integration)', () => {
+
   let server;
   let token;
-
+  // Force notifyDriver to 'console' for OTP test
   beforeAll(async () => {
+    // Patch env to always return devOtpCode (ESM compatible)
+    const envModule = await import('../../src/config/env.js');
+    const env = envModule.default || envModule;
+    env.notifyDriver = 'console';
+    process.env.NOTIFY_DRIVER = 'console';
     await connectDB();
     const user = await createUser({ email: 'payer@test.com', role: 'PATIENT', name: 'Payer' });
     token = issueToken(user);
