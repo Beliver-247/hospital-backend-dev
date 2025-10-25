@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "seed:user": "node scripts/seedUser.js",
     "seed:users": "node scripts/seedUsers.js",
-    "seed:appts": "node scripts/seedAppointments.js"
+    "seed:appts": "node scripts/seedAppointments.js",
+    "seed:patients": "node scripts/seedPatients.js" 
   },
   "keywords": [],
   "author": "",
@@ -27,7 +28,7 @@
     "morgan": "^1.10.1",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.9",
-    "pdfkit": "^0.15.0",
+    "pdfkit": "^0.15.2",
     "uuid": "^13.0.0"
   },
   "devDependencies": {

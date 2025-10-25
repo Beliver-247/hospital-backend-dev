@@ -8,7 +8,7 @@ import {
   getReportById,
   deleteReport,
   downloadReport
-} from '../controllers/report.controller.js';
+} from '../../controllers/reports/report.controller.js';
 
 const router = Router();
 
